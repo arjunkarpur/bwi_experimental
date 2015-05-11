@@ -70,7 +70,7 @@ find_package(catkin REQUIRED COMPONENTS
 add_service_files(
   DIRECTORY srv
   FILES ColorShirt.srv FetchObject.srv Dialog.srv ObjectDetection.srv
-  Whiteboard.srv TargetSearch.srv
+  Whiteboard.srv TargetSearch.srv RedButton.srv
 )
 
 ## Generate actions in the 'action' folder
@@ -155,6 +155,11 @@ add_executable(vision_server src/vision_server.cpp)
 target_link_libraries(vision_server ${catkin_LIBRARIES} ${OpenCV_LIBRARIES})
 add_dependencies(vision_server ${catkin_EXPORTED_TARGETS})
 add_dependencies(vision_server ${${PROJECT_NAME}_EXPORTED_TARGETS})
+
+add_executable(red_button src/red_button.cpp)
+target_link_libraries(red_button ${catkin_LIBRARIES} ${OpenCV_LIBRARIES})
+add_dependencies(red_button ${catkin_EXPORTED_TARGETS})
+add_dependencies(red_button ${${PROJECT_NAME}_EXPORTED_TARGETS})
 
 
 # add_dependencies(blue_shirt object_detection take_human_input white_board)
