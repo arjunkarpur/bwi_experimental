@@ -311,9 +311,11 @@ bool find_red_button (bwi_scavenger::RedButton::Request &req,
     bwi_scavenger::RedButton::Response &res){
 
     ros::Rate r(10); 
-    while ( !red_button_detected && ros::ok() ) 
-        
+    while ( !red_button_detected && ros::ok() ) {
     	ros::spinOnce();
+    }
+
+    res.found_button = true;
 
     return true;
 
