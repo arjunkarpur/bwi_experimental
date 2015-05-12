@@ -23,7 +23,8 @@ std::string file_shirt = "", file_object = "", file_board = "", file_fetch = "",
     file_dialog = ""; 
 
 enum Status { TODO, DOING, DONE };
-enum Task { WHITEBOARD=0, COLORSHIRT=1, OBJECTSEARCH=2, FETCHOBJECT=3, DIALOG=4 }; 
+enum Task { WHITEBOARD=0, COLORSHIRT=1, OBJECTSEARCH=2, FETCHOBJECT=3, DIALOG=4,
+            REDBUTTON=5 }; 
 
 std::vector <std::string> task_descriptions;
 
@@ -103,6 +104,22 @@ void task_dialog() {
     return; 
 }
 
+void task_button() {
+
+    //TODO: as of now, task_button service doesn't respond to call with anything
+
+    ros::ServiceClient client = nh->serviceClient
+        <bwi_scavenger::TargetSearch> ("target_search_service");
+    bwi_scavenger::TargetSearch srv;
+    srv.request.type = 4;
+
+    ROS_INFO("%s: task_button waitForExistence()",
+        ros::this_node::getName().c_str());
+    client.waitForExistence();
+    ROS_INFO("%s: task_button service ready", ros::this_node::getName().c_str());
+    client.call(srv);
+}
+
 void print_to_gui( ros::ServiceClient *gui_service_client ) {
 
     std::string message, str_i; 
@@ -172,6 +189,7 @@ int main(int argc, char **argv){
     task_descriptions.push_back("find and take a picture of object: "); 
     task_descriptions.push_back("fetch an object for a person"); 
     task_descriptions.push_back("communicate with natural language"); 
+    task_descriptions.push_back("find and press red button on a table");
 
     task_statuses = std::vector <Status> (task_descriptions.size(), TODO); 
     ros::Rate rate(10); 
@@ -236,6 +254,8 @@ int main(int argc, char **argv){
                 task_fetch(); break;
             case DIALOG:
                 task_dialog(); break;
+            case REDBUTTON:
+                task_button(); break;
         }
         ROS_INFO("%s: task done", ros::this_node::getName().c_str()); 
 
