@@ -26,6 +26,8 @@ enum Status { TODO, DOING, DONE };
 enum Task { WHITEBOARD=0, COLORSHIRT=1, OBJECTSEARCH=2, FETCHOBJECT=3, DIALOG=4,
             REDBUTTON=5 }; 
 
+bool found_button = false;
+
 std::vector <std::string> task_descriptions;
 
 // status list representing TODO/DOING/DONE of each task
@@ -106,8 +108,6 @@ void task_dialog() {
 
 void task_button() {
 
-    //TODO: as of now, task_button service doesn't respond to call with anything
-
     ros::ServiceClient client = nh->serviceClient
         <bwi_scavenger::TargetSearch> ("target_search_service");
     bwi_scavenger::TargetSearch srv;
@@ -118,6 +118,7 @@ void task_button() {
     client.waitForExistence();
     ROS_INFO("%s: task_button service ready", ros::this_node::getName().c_str());
     client.call(srv);
+    bool found_button = srv.response.found_button;
 }
 
 void print_to_gui( ros::ServiceClient *gui_service_client ) {
