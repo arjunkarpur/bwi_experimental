@@ -67,7 +67,7 @@ sensor_msgs::PointCloud2 plane_cloud_ros;
 
 ros::Publisher button_cloud_pub;
 ros::Publisher plane_cloud_pub;
-ros::Publisher button_pose_pub
+ros::Publisher button_pose_pub;
 
 double computeAvgRedValue(PointCloudT::Ptr in){
 	double total_red = 0;
@@ -297,9 +297,9 @@ void cloud_callback (const sensor_msgs::PointCloud2ConstPtr& input)
 		}
 		else {
 			red_button_detected = false;
-			pcl::toROSMsg(*empty_cloud,cloud_ros);
-			cloud_ros.header.frame_id = cloud->header.frame_id;
-			button_cloud_pub.publish(cloud_ros);
+			pcl::toROSMsg(*empty_cloud,button_cloud_ros);
+			button_cloud_ros.header.frame_id = cloud->header.frame_id;
+			button_cloud_pub.publish(button_cloud_ros);
 		}
 
 		//unlock mutex
@@ -311,9 +311,11 @@ bool find_red_button (bwi_scavenger::RedButton::Request &req,
     bwi_scavenger::RedButton::Response &res){
 
     ros::Rate r(10); 
-    while ( !red_button_detected && ros::ok() ) 
-        
+    while ( !red_button_detected && ros::ok() ) {
     	ros::spinOnce();
+    }
+
+    res.found_button = true;
 
     return true;
 
