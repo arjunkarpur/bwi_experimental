@@ -18,7 +18,6 @@
 
 using namespace std;
 
-bool button_cloud_received = false;
 bool plane_cloud_received = false;
 bool moved_to_plane = false;
 
@@ -29,7 +28,7 @@ typedef pcl::PointXYZRGB PointT;
 typedef pcl::PointCloud<PointT> PointCloudT;
 
 // clouds //
-PointCloudT::Ptr button_cloud (new PointCloudT);
+PointCloudT::Ptr plane_cloud (new PointCloudT);
 
 vector<int> nn_indices (1);
 vector<float> nn_dists (1);
@@ -37,17 +36,12 @@ vector<float> nn_dists (1);
 float x, y, z;
 float tf_x, tf_y, tf_z;
 
-void button_cloud_callback (const sensor_msgs::PointCloud2ConstPtr& input) {
-  pcl::fromROSMsg (*input, *button_cloud);
-  button_cloud_received = true;
-}
-
 void plane_cloud_callback (const sensor_msgs::PointCloud2ConstPtr& input) {
   pcl::fromROSMsg (*input, *plane_cloud);
   plane_cloud_received = true;
 }
 
-void distanceToButtonPlane () {
+void closetPointToButtonPlane () {
 
   pcl::KdTree<PointT>::Ptr tree_kd (new pcl::KdTreeFLANN<PointT>);
   tree_kd->setInputCloud(plane_cloud);
@@ -60,7 +54,7 @@ void distanceToButtonPlane () {
   ROS_INFO("The closest point of (0, 0, 0) is: (%f, %f, %f)", cloud->points[nn_indices[0]].x, cloud->points[nn_indices[0]].y, cloud->points[nn_indices[0]].z); 
 }
 
-void transformToBase () {
+void transformToMap () {
 
   // x forward, y left, z up
   // optical frame
@@ -73,8 +67,10 @@ void transformToBase () {
   tf::StampedTransform transform;
 
   try{
-    listener.waitForTransform("base_footprint", "camera_depth_frame", ros::Time::now(), ros::Duration(3.0));
-    listener.lookupTransform("base_footprint", "camera_depth_frame", ros::Time::now(), transform);
+    //listener.waitForTransform("level_mux/map", "camera_depth_frame", ros::Time::now(), ros::Duration(3.0));
+    //listener.lookupTransform("level_mux/map", "camera_depth_frame", ros::Time::now(), transform);
+    listener.waitForTransform("level_mux/map", plane_cloud->header.frame_id, ros::Time::now(), ros::Duration(3.0));
+    listener.lookupTransform("level_mux/map", plane_cloud->header.frame_id, ros::Time::now(), transform);
   }
   catch (tf::TransformException &ex) {
     ROS_ERROR("%s",ex.what());
@@ -94,7 +90,7 @@ void transformToBase () {
 
 void moveToPlane () {
 
-  MoveBaseClient ac("move_base", true);
+  MoveBaseClient ac("move_base_interruptable_simple/goal", true);
 
   while(!ac.waitForServer(ros::Duration(5.0))) {
     ROS_INFO("Waiting for the move_base action server to come up");
@@ -102,8 +98,7 @@ void moveToPlane () {
 
   move_base_msgs::MoveBaseGoal goal;
 
-  //we'll send a goal to the robot to move 1 meter forward
-  goal.target_pose.header.frame_id = "base_footprint";
+  goal.target_pose.header.frame_id = "level_mux/map";
   goal.target_pose.header.stamp = ros::Time::now();
 
   goal.target_pose.pose.position.x = tf_x;
@@ -127,7 +122,7 @@ void moveToPlane () {
 
 void waitForCloud() {
 	ros::Rate r(10);
-	while (!button_cloud_received && !plane_cloud_received){
+	while (!plane_cloud_received) {
 		r.sleep();
 		ros::spinOnce();
 	}
@@ -139,11 +134,11 @@ bool approach_red_button (bwi_scavenger::RedButtonAction::Request &req,
   //Step 1: listen to the clouds
   waitForCloud();
 
-  //Step 2: find closest point pf plane
-  distanceToButtonPlane();
+  //Step 2: find closest point of plane
+  closetPointToButtonPlane();
   
   //Step 3: transform to base
-  transformToBase();
+  transformToMap();
 
   //Step 4: move to plane
   moveToPlane();
@@ -164,7 +159,6 @@ int main(int argc, char **argv) {
   ros::NodeHandle nh;
   
   //create subscriber for button cloud
-  ros::Subscriber sub_button = nh.subscribe("/red_button_server/button_cloud", 1, button_cloud_callback);
   ros::Subscriber sub_plane = nh.subscribe("/red_button_server/plane_cloud", 1, plane_cloud_callback);
 
   ros::ServiceServer service = nh.advertiseService("red_button_approach", approach_red_button);
