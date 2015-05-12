@@ -1,6 +1,7 @@
 int32 WHITEBOARD = 1
 int32 TEMPLATE = 2
 int32 COLORSHIRT = 3
+int32 REDBUTTON = 4
 
 int32 RED = 1
 int32 BLUE = 2

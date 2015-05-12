@@ -4,6 +4,7 @@
 #include "bwi_scavenger/ObjectDetection.h"
 #include "bwi_scavenger/Whiteboard.h"
 #include "bwi_scavenger/VisionTaskAction.h"
+#include "bwi_scavenger/RedButton.h"
 #include <actionlib/server/simple_action_server.h>
 
 
@@ -44,7 +45,6 @@ public:
             <bwi_scavenger::Whiteboard> ("whiteboard_service");
         bwi_scavenger::Whiteboard srv_whiteboard;
 
-
         ros::ServiceClient client_template = nh_.serviceClient
             <bwi_scavenger::ObjectDetection> ("object_detection_service");
         bwi_scavenger::ObjectDetection srv_template;
@@ -52,6 +52,10 @@ public:
         ros::ServiceClient client_shirt = nh_.serviceClient
             <bwi_scavenger::ColorShirt> ("blue_shirt_service"); 
         bwi_scavenger::ColorShirt srv_shirt;
+
+        ros::ServiceClient client_button = nh_.serviceClient
+            <bwi_scavenger::RedButton> ("red_button_service");
+        bwi_scavenger::RedButton srv_button;
 
         switch ( (int) goal->type) {
             
@@ -76,6 +80,12 @@ public:
                 srv_shirt.request.color = goal->color; 
                 client_shirt.call(srv_shirt); 
                 result_.path_to_image = srv_shirt.response.path_to_image; 
+                break;
+            
+            case bwi_scavenger::VisionTaskGoal::REDBUTTON:  // red button
+                client_button.waitForExistence();
+                client_button.call(srv_button);
+                //TODO: return some kind of value to result_?
                 break;
 
             default:
