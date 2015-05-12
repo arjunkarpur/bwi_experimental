@@ -16,6 +16,20 @@
 #include <tf/transform_listener.h>
 #include <tf/transform_datatypes.h>
 
+// PCL specific includes
+#include <pcl/conversions.h>
+#include <pcl_conversions/pcl_conversions.h>
+#include <pcl/point_cloud.h>
+#include <pcl/console/parse.h>
+#include <pcl/point_types.h>
+#include <pcl/io/openni_grabber.h>
+#include <pcl/sample_consensus/sac_model_plane.h>
+#include <pcl/common/time.h>
+#include <pcl/common/common.h>
+
+#include <pcl/kdtree/kdtree.h>
+#include <pcl/kdtree/kdtree_flann.h>
+
 using namespace std;
 
 bool plane_cloud_received = false;
@@ -43,15 +57,15 @@ void plane_cloud_callback (const sensor_msgs::PointCloud2ConstPtr& input) {
 
 void closetPointToButtonPlane () {
 
-  pcl::KdTree<PointT>::Ptr tree_kd (new pcl::KdTreeFLANN<PointT>);
-  tree_kd->setInputCloud(plane_cloud);
-  tree_kd->nearestKSearch(PointT(0, 0, 0), 1, nn_indices, nn_dists);
+  pcl::KdTreeFLANN<PointT> kdtree;
+  kdtree.setInputCloud(plane_cloud);
+  kdtree.nearestKSearch(PointT(0, 0, 0), 1, nn_indices, nn_dists);
 
-  x = cloud->points[nn_indices[0]].x;
-  y = cloud->points[nn_indices[0]].y;
-  z = cloud->points[nn_indices[0]].z;
+  x = plane_cloud->points[nn_indices[0]].x;
+  y = plane_cloud->points[nn_indices[0]].y;
+  z = plane_cloud->points[nn_indices[0]].z;
 
-  ROS_INFO("The closest point of (0, 0, 0) is: (%f, %f, %f)", cloud->points[nn_indices[0]].x, cloud->points[nn_indices[0]].y, cloud->points[nn_indices[0]].z); 
+  ROS_INFO("The closest point of (0, 0, 0) is: (%f, %f, %f)", plane_cloud->points[nn_indices[0]].x, plane_cloud->points[nn_indices[0]].y, plane_cloud->points[nn_indices[0]].z); 
 }
 
 void transformToMap () {
@@ -66,18 +80,10 @@ void transformToMap () {
       
   tf::StampedTransform transform;
 
-  try{
-    //listener.waitForTransform("level_mux/map", "camera_depth_frame", ros::Time::now(), ros::Duration(3.0));
-    //listener.lookupTransform("level_mux/map", "camera_depth_frame", ros::Time::now(), transform);
-    listener.waitForTransform("level_mux/map", plane_cloud->header.frame_id, ros::Time::now(), ros::Duration(3.0));
-    listener.lookupTransform("level_mux/map", plane_cloud->header.frame_id, ros::Time::now(), transform);
-  }
-  catch (tf::TransformException &ex) {
-    ROS_ERROR("%s",ex.what());
-    ROS_WARN("Base to depth camera transform unavailable %s", ex.what());
-    ros::Duration(1.0).sleep();
-    continue;
-  }
+  //listener.waitForTransform("level_mux/map", "camera_depth_frame", ros::Time::now(), ros::Duration(3.0));
+  //listener.lookupTransform("level_mux/map", "camera_depth_frame", ros::Time::now(), transform);
+  listener.waitForTransform("level_mux/map", plane_cloud->header.frame_id, ros::Time::now(), ros::Duration(3.0));
+  listener.lookupTransform("level_mux/map", plane_cloud->header.frame_id, ros::Time::now(), transform);
       
   // Transform from depth frame to base_footprint
   tf::Vector3 transform_vector = transform * vector;
@@ -144,7 +150,7 @@ bool approach_red_button (bwi_scavenger::RedButtonAction::Request &req,
   moveToPlane();
 
   //Step 5: call push button node
-  if(moved_to_plane = true;)
+  if(moved_to_plane)
     system("rosrun mimic_motion push_button_demo");
   else 
     return false;
