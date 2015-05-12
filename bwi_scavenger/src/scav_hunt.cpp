@@ -119,6 +119,9 @@ void task_button() {
     ROS_INFO("%s: task_button service ready", ros::this_node::getName().c_str());
     client.call(srv);
     bool found_button = srv.response.found_button;
+    if (found_button == true) {
+        ROS_INFO("Found red button!");
+    }
 }
 
 void print_to_gui( ros::ServiceClient *gui_service_client ) {
