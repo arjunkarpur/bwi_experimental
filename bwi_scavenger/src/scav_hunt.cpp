@@ -163,6 +163,7 @@ void print_to_gui( ros::ServiceClient *gui_service_client ) {
     std::string eog = "eog ";
     std::string gedit = "gedit "; 
     
+    /*
     if (srv.response.index == 0 && task_statuses[0] == DONE)
         system((eog + file_shirt).c_str());
     
@@ -177,6 +178,7 @@ void print_to_gui( ros::ServiceClient *gui_service_client ) {
 
     else if (srv.response.index == 4 && task_statuses[4] == DONE)
         system((gedit + file_dialog).c_str()); 
+        */
 }
 
 
@@ -188,11 +190,13 @@ int main(int argc, char **argv){
     ros::ServiceClient gui_service_client = nh->serviceClient 
         <bwi_msgs::QuestionDialog> ("question_dialog");
 
+    /*
     task_descriptions.push_back("find a person standing near a whiteboard"); 
     task_descriptions.push_back("find a person wearing a color shirt and take a picture: "); 
     task_descriptions.push_back("find and take a picture of object: "); 
     task_descriptions.push_back("fetch an object for a person"); 
     task_descriptions.push_back("communicate with natural language"); 
+    */
     task_descriptions.push_back("find and press red button on a table");
 
     task_statuses = std::vector <Status> (task_descriptions.size(), TODO); 
