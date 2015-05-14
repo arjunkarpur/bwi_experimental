@@ -90,7 +90,7 @@ int countRedVoxels(PointCloudT::Ptr in) {
         b = in->points[i].b;
         // Look for mostly red values points
         // These values are hand-picked using lab lighting samples
-        if (r > 200 && (g + b) < 50) {
+        if (r > 100 && (g + b) < 50) {
             total_red++;
         }
     }
@@ -130,10 +130,15 @@ void computeClusters(PointCloudT::Ptr in, double tolerance){
 
 void cloud_callback (const sensor_msgs::PointCloud2ConstPtr& input)
 {
+  
+  ROS_INFO("Cloud callback called");
+
 	cloud_mutex.lock ();
 
 	//convert to PCL format
 	pcl::fromROSMsg (*input, *cloud);
+
+  //ROS_INFO("Converted input to PCL format");
 
 	cloud_mutex.unlock ();
 
@@ -148,7 +153,11 @@ void cloud_callback (const sensor_msgs::PointCloud2ConstPtr& input)
 		pass.setFilterLimits (0.0, 1.15);
 		pass.filter (*cloud);
 
-		ROS_INFO("Before voxel grid filter: %i points",(int)cloud->points.size());
+		/*pcl::toROSMsg(*cloud,plane_cloud_ros);
+		plane_cloud_ros.header.frame_id = cloud->header.frame_id;
+		plane_cloud_pub.publish(plane_cloud_ros);*/
+
+		//ROS_INFO("Before voxel grid filter: %i points",(int)cloud->points.size());
 
 		 // Create the filtering object: downsample the dataset using a leaf size of 1cm
 		pcl::VoxelGrid<PointT> vg;
@@ -157,7 +166,14 @@ void cloud_callback (const sensor_msgs::PointCloud2ConstPtr& input)
 		vg.setLeafSize (0.005f, 0.005f, 0.005f);
 		vg.filter (*cloud_filtered);
 
-		ROS_INFO("After voxel grid filter: %i points",(int)cloud_filtered->points.size());
+
+		/*pcl::toROSMsg(*cloud_filtered,plane_cloud_ros);
+		plane_cloud_ros.header.frame_id = cloud->header.frame_id;
+		plane_cloud_pub.publish(plane_cloud_ros);*/
+
+
+
+		//ROS_INFO("After voxel grid filter: %i points",(int)cloud_filtered->points.size());
 
 		//Step 2: plane fitting
 		pcl::ModelCoefficients::Ptr coefficients (new pcl::ModelCoefficients ());
@@ -185,9 +201,12 @@ void cloud_callback (const sensor_msgs::PointCloud2ConstPtr& input)
 		extract.setNegative (false);
 		extract.filter (*cloud_plane);
 
+		ROS_INFO("Cloud Plane"); 
+
 		pcl::toROSMsg(*cloud_plane,plane_cloud_ros);
 		plane_cloud_ros.header.frame_id = cloud->header.frame_id;
 		plane_cloud_pub.publish(plane_cloud_ros);
+
 
 		//extract everything else
 		extract.setNegative (true);
@@ -203,6 +222,8 @@ void cloud_callback (const sensor_msgs::PointCloud2ConstPtr& input)
 
 		//Step 3: Eucledian Cluster Extraction
 		computeClusters(cloud_blobs,0.04);
+
+		//ROS_INFO("Euclidean Cluster"); 		
 
 		clusters_on_plane.clear();
 
@@ -234,17 +255,26 @@ void cloud_callback (const sensor_msgs::PointCloud2ConstPtr& input)
 			}
 		}
 */
+	ROS_INFO("Color detection"); 
+  ROS_INFO("Clusters on plane: %i", clusters_on_plane.size());
 
         int max_num_red = 0;
         // Alternatively, find the blob with most red voxels
 		for (unsigned int i = 0; i < clusters_on_plane.size(); i++) {
             int red_num_i = countRedVoxels(clusters_on_plane.at(i));
+            ROS_INFO("Cluster %i:   %i red voxels", i, red_num_i);
             if (red_num_i > max_num_red) {
                 max_num_red = red_num_i;
                 max_index = i;
             }
-        }
-
+    }
+  
+    ROS_INFO("Max Index: %i", max_index);
+    /*
+    if (max_index >= 0) {
+      ROS_INFO("# of points: %d", clusters_on_plane.at(max_index)->points.size());
+    }
+*/
 
 		// PointT min;
 		// PointT max;
@@ -258,9 +288,9 @@ void cloud_callback (const sensor_msgs::PointCloud2ConstPtr& input)
 
 		//publish  cloud if we think it's a button
 		/*max_red > 170 && max_red < 250 && */
-        if ((max_index >= 0) &&
+      if ((max_index >= 0) &&
             (clusters_on_plane.at(max_index)->points.size()) < 360 &&
-            (clusters_on_plane.at(max_index)->points.size()) > 80) {
+            (clusters_on_plane.at(max_index)->points.size()) > 50) {
 
 			pcl::toROSMsg(*clusters_on_plane.at(max_index),button_cloud_ros);
 			button_cloud_ros.header.frame_id = cloud->header.frame_id;
@@ -276,7 +306,7 @@ void cloud_callback (const sensor_msgs::PointCloud2ConstPtr& input)
 			pose_i.position.z=centroid(2);
 			pose_i.orientation = tf::createQuaternionMsgFromRollPitchYaw(0,0,-3.14/2);
 
-			geometry_msgs::PoseStamped stampedPose;
+			/*geometry_msgs::PoseStamped stampedPose;
 
 			tf::TransformListener listener;
 
@@ -289,9 +319,10 @@ void cloud_callback (const sensor_msgs::PointCloud2ConstPtr& input)
 			listener.transformPose("mico_api_origin", stampedPose, stampOut);
 
 			stampOut.pose.orientation = tf::createQuaternionMsgFromRollPitchYaw(0,-3.14/2,0);
-			button_pose_pub.publish(stampOut);
+			button_pose_pub.publish(stampOut);*/
 
             red_button_detected = true;
+	    ROS_INFO("Red button found on plane");
             ros::Duration(5.0).sleep(); 
 
 		}
@@ -312,10 +343,12 @@ bool find_red_button (bwi_scavenger::RedButton::Request &req,
 
     ros::Rate r(10); 
     while ( !red_button_detected && ros::ok() ) {
+	ROS_INFO("Ros Spin");
     	ros::spinOnce();
     }
 
     res.found_button = true;
+    ROS_INFO("Red button detected");
 
     return true;
 
@@ -328,8 +361,11 @@ int main (int argc, char** argv)
 	ros::init (argc, argv, "red_button_server");
 	ros::NodeHandle nh; 
 
+  ROS_INFO("Red_button node started");
+
     // Create a ROS subscriber for the input point cloud
-	std::string camera_topic = "/camera/depth_registered/points";
+	//std::string camera_topic = "/camera/depth_registered/points";
+	std::string camera_topic = "/nav_kinect/depth_registered/points";
 	ros::Subscriber sub = nh.subscribe (camera_topic, 1, cloud_callback);
 
 	button_cloud_pub = nh.advertise<sensor_msgs::PointCloud2>("red_button_server/button_cloud", 10);
