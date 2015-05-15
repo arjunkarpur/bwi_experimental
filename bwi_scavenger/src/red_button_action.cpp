@@ -82,11 +82,13 @@ void transformToMap () {
 
   //listener.waitForTransform("level_mux/map", "camera_depth_frame", ros::Time::now(), ros::Duration(3.0));
   //listener.lookupTransform("level_mux/map", "camera_depth_frame", ros::Time::now(), transform);
-  listener.waitForTransform("level_mux/map", plane_cloud->header.frame_id, ros::Time::now(), ros::Duration(3.0));
-  listener.lookupTransform("level_mux/map", plane_cloud->header.frame_id, ros::Time::now(), transform);
+  listener.waitForTransform("level_mux/map", plane_cloud->header.frame_id, ros::Time(0), ros::Duration(3.0));
+  listener.lookupTransform("level_mux/map", plane_cloud->header.frame_id, ros::Time(0), transform);
       
   // Transform from depth frame to base_footprint
   tf::Vector3 transform_vector = transform * vector;
+
+  ROS_INFO("Transformed");
 
   tf_x = transform_vector[0];
   tf_y = transform_vector[1];
@@ -95,17 +97,17 @@ void transformToMap () {
 }
 
 void moveToPlane () {
+  ROS_INFO("In move base");
+  
+  ros::Publisher set_pose = nh.advertise<geometry_msgs::
+      PoseStamped>("move_base_interruptable_simple/goal", 10);
 
-  MoveBaseClient ac("move_base_interruptable_simple/goal", true);
-
-  while(!ac.waitForServer(ros::Duration(5.0))) {
-    ROS_INFO("Waiting for the move_base action server to come up");
-  }
+  geometry_msgs::PoseStamped stampedPose; 
 
   move_base_msgs::MoveBaseGoal goal;
 
   goal.target_pose.header.frame_id = "level_mux/map";
-  goal.target_pose.header.stamp = ros::Time::now();
+  goal.target_pose.header.stamp = ros::Time(0);
 
   goal.target_pose.pose.position.x = tf_x;
   goal.target_pose.pose.position.y = tf_y;
@@ -148,12 +150,12 @@ bool approach_red_button (bwi_scavenger::RedButtonAction::Request &req,
 
   //Step 4: move to plane
   moveToPlane();
-
+/*
   //Step 5: call push button node
   if(moved_to_plane)
     system("rosrun mimic_motion push_button_demo");
   else 
-    return false;
+    return false;*/
 
   return true;
 }
@@ -168,6 +170,10 @@ int main(int argc, char **argv) {
   ros::Subscriber sub_plane = nh.subscribe("/red_button_server/plane_cloud", 1, plane_cloud_callback);
 
   ros::ServiceServer service = nh.advertiseService("red_button_approach", approach_red_button);
+
+  while (ros::ok()) {
+	ros::spinOnce();
+  }
 
   return 0;
 }
