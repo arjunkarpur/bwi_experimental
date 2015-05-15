@@ -160,11 +160,22 @@ void cloud_callback (const sensor_msgs::PointCloud2ConstPtr& input)
 		//ROS_INFO("Before voxel grid filter: %i points",(int)cloud->points.size());
 
 		 // Create the filtering object: downsample the dataset using a leaf size of 1cm
-		pcl::VoxelGrid<PointT> vg;
+		
+    pcl::VoxelGrid<PointT> vg;
 		pcl::PointCloud<PointT>::Ptr cloud_filtered (new pcl::PointCloud<PointT>);
 		vg.setInputCloud (cloud);
 		vg.setLeafSize (0.005f, 0.005f, 0.005f);
 		vg.filter (*cloud_filtered);
+
+    
+    if (cloud_filtered->points.size() == 0) {
+      ROS_INFO("No plane detected");
+      red_button_detected = false;
+      cloud_mutex.unlock();
+      return;
+		
+    }
+    
 
 
 		/*pcl::toROSMsg(*cloud_filtered,plane_cloud_ros);
@@ -353,7 +364,5 @@ int main (int argc, char** argv)
     while (ros::ok()) {
         ros::spinOnce(); 
         r.sleep();
-    }
-
-    return true;
+    }    return true;
 };
