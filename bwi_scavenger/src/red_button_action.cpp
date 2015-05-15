@@ -47,6 +47,8 @@ PointCloudT::Ptr plane_cloud (new PointCloudT);
 vector<int> nn_indices (1);
 vector<float> nn_dists (1);
 
+ros::Publisher set_pose;
+
 float x, y, z;
 float tf_x, tf_y, tf_z;
 
@@ -97,14 +99,27 @@ void transformToMap () {
 }
 
 void moveToPlane () {
-  ROS_INFO("In move base");
+    ROS_INFO("Moving to plane");
+
+    geometry_msgs::PoseStamped stampedPose; 
+    
+    stampedPose.header.frame_id = "level_mux/map";
+    stampedPose.header.stamp = ros::Time(0);
+
+    stampedPose.pose.position.x = tf_x;
+    stampedPose.pose.position.y = tf_y;
+    stampedPose.pose.orientation.w = 1.0;
+
+    set_pose.publish(stampedPose);
   
-  ros::Publisher set_pose = nh.advertise<geometry_msgs::
-      PoseStamped>("move_base_interruptable_simple/goal", 10);
+    /*
+    MoveBaseClient ac("move_base_interruptable_simple/goal", true);
 
-  geometry_msgs::PoseStamped stampedPose; 
-
-  move_base_msgs::MoveBaseGoal goal;
+    while (!ac.waitForServer(ros::Duration(5.0))) {
+        ROS_INFO("Waiting for move_base action server to come up");
+    }
+    
+   move_base_msgs::MoveBaseGoal goal;
 
   goal.target_pose.header.frame_id = "level_mux/map";
   goal.target_pose.header.stamp = ros::Time(0);
@@ -124,6 +139,7 @@ void moveToPlane () {
     moved_to_plane = true;
   } else
     ROS_INFO("The base failed to move to table");
+  */
 
   
 }
@@ -150,12 +166,12 @@ bool approach_red_button (bwi_scavenger::RedButtonAction::Request &req,
 
   //Step 4: move to plane
   moveToPlane();
-/*
+
   //Step 5: call push button node
   if(moved_to_plane)
     system("rosrun mimic_motion push_button_demo");
   else 
-    return false;*/
+    return false;
 
   return true;
 }
@@ -165,11 +181,15 @@ int main(int argc, char **argv) {
   ros::init(argc, argv, "red_button_action");
 
   ros::NodeHandle nh;
-  
+
+
   //create subscriber for button cloud
   ros::Subscriber sub_plane = nh.subscribe("/red_button_server/plane_cloud", 1, plane_cloud_callback);
 
   ros::ServiceServer service = nh.advertiseService("red_button_approach", approach_red_button);
+
+  set_pose = nh.advertise<geometry_msgs::
+    PoseStamped>("move_base_interruptable_simple/goal", 10);
 
   while (ros::ok()) {
 	ros::spinOnce();
