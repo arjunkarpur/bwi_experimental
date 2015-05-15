@@ -361,18 +361,22 @@ int main (int argc, char** argv)
 	ros::init (argc, argv, "red_button_server");
 	ros::NodeHandle nh; 
 
-  ROS_INFO("Red_button node started");
+    ROS_INFO("Red_button node started");
 
     // Create a ROS subscriber for the input point cloud
 	//std::string camera_topic = "/camera/depth_registered/points";
 	std::string camera_topic = "/nav_kinect/depth_registered/points";
 	ros::Subscriber sub = nh.subscribe (camera_topic, 1, cloud_callback);
 
-	button_cloud_pub = nh.advertise<sensor_msgs::PointCloud2>("red_button_server/button_cloud", 10);
-	plane_cloud_pub = nh.advertise<sensor_msgs::PointCloud2>("red_button_server/plane_cloud", 10);
-	button_pose_pub = nh.advertise<geometry_msgs::PoseStamped>("red_button_server/button_pose", 10);
+	button_cloud_pub = nh.advertise<sensor_msgs::PointCloud2>
+        ("red_button_server/button_cloud", 10);
+	plane_cloud_pub = nh.advertise<sensor_msgs::PointCloud2>
+        ("red_button_server/plane_cloud", 10);
+	button_pose_pub = nh.advertise<geometry_msgs::PoseStamped>
+        ("red_button_server/button_pose", 10);
 
-    ros::ServiceServer service = nh.advertiseService("red_button_service", find_red_button);
+    ros::ServiceServer service = nh.advertiseService
+        ("red_button_service", find_red_button);
 
     ros::Rate r(10);
 

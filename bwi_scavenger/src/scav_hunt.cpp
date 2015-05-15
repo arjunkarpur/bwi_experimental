@@ -5,6 +5,7 @@
 #include "bwi_scavenger/TargetSearch.h"
 #include "bwi_scavenger/Dialog.h"
 #include "bwi_scavenger/FetchObject.h"
+#include "bwi_scavenger/RedButtonAction.h"
 
 #include <boost/lexical_cast.hpp>
 
@@ -120,7 +121,14 @@ void task_button() {
     client.call(srv);
     bool found_button = srv.response.found_button;
     if (found_button == true) {
-        ROS_INFO("Found red button!");
+        ROS_INFO("Found red button! Calling red_button_action...");
+        
+        // Call red_button_action file)
+        ros::ServiceClient client_button_action = nh->serviceClient
+            <bwi_scavenger::RedButtonAction> ("red_button_approach");
+        bwi_scavenger::RedButtonAction srv_button_action;
+        client_button_action.waitForExistence();
+        client_button_action.call(srv_button_action);
     }
 }
 
@@ -190,13 +198,11 @@ int main(int argc, char **argv){
     ros::ServiceClient gui_service_client = nh->serviceClient 
         <bwi_msgs::QuestionDialog> ("question_dialog");
 
-    /*
     task_descriptions.push_back("find a person standing near a whiteboard"); 
     task_descriptions.push_back("find a person wearing a color shirt and take a picture: "); 
     task_descriptions.push_back("find and take a picture of object: "); 
     task_descriptions.push_back("fetch an object for a person"); 
     task_descriptions.push_back("communicate with natural language"); 
-    */
     task_descriptions.push_back("find and press red button on a table");
 
     task_statuses = std::vector <Status> (task_descriptions.size(), TODO); 

@@ -117,13 +117,13 @@ void moveToPlane () {
 
   ac.waitForResult();
 
-  if(ac.getState() == actionlib::SimpleClientGoalState::SUCCEEDED)
+  if(ac.getState() == actionlib::SimpleClientGoalState::SUCCEEDED) {
     ROS_INFO("The base moved to the table");
-  else
-    ROS_INFO("The base failed to move for some reason");
+    moved_to_plane = true;
+  } else
+    ROS_INFO("The base failed to move to table");
 
-  moved_to_plane = true;
-
+  
 }
 
 void waitForCloud() {
