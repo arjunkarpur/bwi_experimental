@@ -85,7 +85,6 @@ public:
             case bwi_scavenger::VisionTaskGoal::REDBUTTON:  // red button
                 client_button.waitForExistence();
                 client_button.call(srv_button);
-                //TODO: return some kind of value to result_?
                 break;
 
             default:
