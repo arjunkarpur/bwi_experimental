@@ -291,7 +291,7 @@ void cloud_callback (const sensor_msgs::PointCloud2ConstPtr& input)
               stampOut.pose.orientation = tf::createQuaternionMsgFromRollPitchYaw(0,-3.14/2,0);
               button_pose_pub.publish(stampOut);*/
 
-                    }
+              
         } else {
             red_button_detected = false;
             pcl::toROSMsg(*empty_cloud,button_cloud_ros);
