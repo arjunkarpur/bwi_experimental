@@ -47,7 +47,7 @@ PointCloudT::Ptr plane_cloud (new PointCloudT);
 vector<int> nn_indices (1);
 vector<float> nn_dists (1);
 
-ros::Publisher set_pose;
+//ros::Publisher set_pose;
 
 float x, y, z;
 float tf_x, tf_y, tf_z;
@@ -100,7 +100,7 @@ void transformToMap () {
 
 void moveToPlane () {
     ROS_INFO("Moving to plane");
-
+/*
     geometry_msgs::PoseStamped stampedPose; 
 
     stampedPose.header.frame_id = "level_mux/map";
@@ -110,38 +110,36 @@ void moveToPlane () {
     stampedPose.pose.position.y = tf_y;
     stampedPose.pose.orientation.w = 1.0;
 
-    set_pose.publish(stampedPose);
+    set_pose.publish(stampedPose);*/
 
-    /*
-       MoveBaseClient ac("move_base_interruptable_simple/goal", true);
+    
+    MoveBaseClient ac("move_base_interruptable/goal", true);
 
-       while (!ac.waitForServer(ros::Duration(5.0))) {
-       ROS_INFO("Waiting for move_base action server to come up");
-       }
+    while (!ac.waitForServer(ros::Duration(5.0))) {
+    ROS_INFO("Waiting for move_base action server to come up");
+    }
 
-       move_base_msgs::MoveBaseGoal goal;
+    move_base_msgs::MoveBaseGoal goal;
 
-       goal.target_pose.header.frame_id = "level_mux/map";
-       goal.target_pose.header.stamp = ros::Time(0);
+    goal.target_pose.header.frame_id = "level_mux/map";
+    goal.target_pose.header.stamp = ros::Time(0);
 
-       goal.target_pose.pose.position.x = tf_x;
-       goal.target_pose.pose.position.y = tf_y;
-       goal.target_pose.pose.orientation.w = 1.0;
+    goal.target_pose.pose.position.x = tf_x;
+    goal.target_pose.pose.position.y = tf_y;
+    goal.target_pose.pose.orientation.w = 1.0;
 
-       ROS_INFO("Sending goal");
+    ROS_INFO("Sending goal");
 
-       ac.sendGoal(goal);
+    ac.sendGoal(goal);
 
-       ac.waitForResult();
+    ac.waitForResult();
 
-       if(ac.getState() == actionlib::SimpleClientGoalState::SUCCEEDED) {
-       ROS_INFO("The base moved to the table");
-       moved_to_plane = true;
-       } else
-       ROS_INFO("The base failed to move to table");
-     */
-
-
+    if(ac.getState() == actionlib::SimpleClientGoalState::SUCCEEDED) {
+      ROS_INFO("The base moved to the table");
+      moved_to_plane = true;
+    } else
+      ROS_WARN("The base failed to move to table");
+     
 }
 
 void waitForCloud() {
@@ -170,7 +168,7 @@ bool approach_red_button (bwi_scavenger::RedButtonAction::Request &req,
     //Step 5: call push button node
     if(moved_to_plane)
         ROS_INFO("Calling node to press button");
-    system("rosrun mimic_motion push_button_demo");
+        //system("rosrun mimic_motion push_button_demo");
     else 
         return false;
 
@@ -183,14 +181,13 @@ int main(int argc, char **argv) {
 
     ros::NodeHandle nh;
 
-
     //create subscriber for button cloud
     ros::Subscriber sub_plane = nh.subscribe("/red_button_server/plane_cloud", 1, plane_cloud_callback);
 
     ros::ServiceServer service = nh.advertiseService("red_button_approach", approach_red_button);
 
-    set_pose = nh.advertise<geometry_msgs::
-        PoseStamped>("move_base_interruptable_simple/goal", 10);
+    //set_pose = nh.advertise<geometry_msgs::
+    //    PoseStamped>("move_base_interruptable_simple/goal", 10);
 
     while (ros::ok()) {
         ros::spinOnce();
