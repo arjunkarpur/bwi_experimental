@@ -1,3 +1,10 @@
+// rosrun bwi_scavenger red_button
+// rosrun bwi_scavenger red_button_action
+// rosservice call "/red_button_service" {}
+// rosservice call "/red_button_approach" {}
+// roslaunch bwi_launch segbot_v1.launch --screen
+// rosrun segbot_bringup teleop_twist_keyboard 
+
 #include <ros/ros.h>
 #include <signal.h>
 #include <iostream>
@@ -95,6 +102,8 @@ void transformToMap () {
     tf_x = transform_vector[0];
     tf_y = transform_vector[1];
     tf_z = transform_vector[2];
+    
+    ROS_INFO("The transformed point is : (%f, %f, %f)", tf_x, tf_y, tf_z); 
 
 }
 
@@ -113,7 +122,7 @@ void moveToPlane () {
     set_pose.publish(stampedPose);*/
 
     
-    MoveBaseClient ac("move_base_interruptable/goal", true);
+    MoveBaseClient ac("move_base_interruptable", true);
 
     while (!ac.waitForServer(ros::Duration(5.0))) {
     ROS_INFO("Waiting for move_base action server to come up");
